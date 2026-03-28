@@ -1,0 +1,29 @@
+version: "3"
+services:
+  nakama:
+    build: .
+    entrypoint:
+      - "/bin/sh"
+      - "-ecx"
+      - >
+        until /nakama/nakama migrate up --database.address root@cockroachdb:26257; do
+          echo "Waiting for DB...";
+          sleep 2;
+        done;
+        exec /nakama/nakama --name nakama1 --database.address root@cockroachdb:26257 --logger.level INFO \
+        --runtime.path /nakama/data/modules
+      
+    ports:
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
+    depends_on:
+      cockroachdb:
+        condition:
+          service_started
+  cockroachdb:
+    image: cockroachdb/cockroach:latest-v23.1
+    command: start-single-node --insecure
+    ports:
+      - "26257:26257"
+      - "8080:8080"
