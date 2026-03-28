@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"github.com/heroiclabs/nakama-common/runtime"
 )
@@ -14,6 +15,13 @@ type MatchHandler struct{}
 type MatchState struct {
 	players map[string]runtime.Presence
 	marks  map[string]string
+	board  [3][3]string
+	currentTurn string
+}
+
+type Move struct {
+	Row int `json:"row"`
+	Col int `json:"col"`	
 }
 
 func (m *MatchHandler) MatchInit(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, params map[string]interface{}) (interface{}, int, string) {
@@ -51,11 +59,15 @@ func (m *MatchHandler) MatchJoin(ctx context.Context, logger runtime.Logger, db 
 			s.marks[p.GetUserId()] = "X"
 		} else if len(s.players) == 2 {
 			s.marks[p.GetUserId()] = "O"
+			for player := range s.players {
+				s.currentTurn = player
+				logger.Info("First turn assigned to player: %s", s.players[player].GetUsername())
+				break
+			}
 		}
 
 		logger.Info("Player joined: %s, assigned mark: %s", p.GetUsername(), s.marks[p.GetUserId()])
-		// log number of players in the match
-		logger.Info("Number of players in match: %d", len(s.players))
+		// logger.Info("Number of players in match: %d", len(s.players))
 	}
 
 	return s
@@ -75,6 +87,53 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 
 func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, messages []runtime.MatchData) interface{} {
 
+	s := state.(*MatchState)
+
+	for _, msg := range messages {
+		var move Move
+		err := json.Unmarshal(msg.GetData(), &move)
+		if err != nil {
+			logger.Error("Invalid move data: %v", err)
+			continue
+		}
+		
+		userId := msg.GetUserId()
+		logger.Info("Received move from player %s: row %d, col %d", userId, move.Row, move.Col)
+
+		if move.Row < 0 || move.Row > 2 || move.Col < 0 || move.Col > 2 {
+			logger.Info("Invalid move: row and col must be between 0 and 2")
+			continue
+		}
+
+		// Check if it's the player's turn
+		if s.currentTurn != "" && s.currentTurn != userId {
+			logger.Info("It's not player %s's turn", userId)
+			continue
+		}
+
+		// Check if cell is empty
+		if s.board[move.Row][move.Col] != "" {
+			logger.Info("Cell (%d, %d) is already occupied", move.Row, move.Col)
+			continue
+		}
+
+		mark := s.marks[userId]
+
+		// Update board state
+		s.board[move.Row][move.Col] = mark
+		logger.Info("Player %s placed %s at (%d, %d)",userId, mark, move.Row, move.Col)
+
+		// Switch turn
+		for player := range s.players {
+			if player != userId {
+				s.currentTurn = player
+				break
+			}
+		}
+
+		boardState, _ := json.Marshal(s.board)
+		dispatcher.BroadcastMessage(1, boardState, nil, nil, true)
+	}
 	return state
 }
 
