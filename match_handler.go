@@ -68,13 +68,10 @@ func (m *MatchHandler) MatchJoin(ctx context.Context, logger runtime.Logger, db 
 
 		if len(s.players) == 1 {
 			s.marks[p.GetUserId()] = "X"
+			s.currentTurn = p.GetUserId()
+			logger.Info("First turn assigned to player: %s", s.players[p.GetUserId()].GetUsername())
 		} else if len(s.players) == 2 {
 			s.marks[p.GetUserId()] = "O"
-			for player := range s.players {
-				s.currentTurn = player
-				logger.Info("First turn assigned to player: %s", s.players[player].GetUsername())
-				break
-			}
 		}
 
 		logger.Info("Player joined: %s, assigned mark: %s", p.GetUsername(), s.marks[p.GetUserId()])
@@ -141,6 +138,22 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 				break
 			}
 		}
+
+		// No moves left, it's a draw
+		isBoardFull := true
+		for i := 0; i < 3; i++ {
+			for j := 0; j < 3; j++ {
+				if s.board[i][j] == "" {
+					isBoardFull = false
+					break
+				}
+			}
+		}
+
+		if isBoardFull {
+			logger.Info("Board is full, it's a draw!")
+		}
+
 
 		win := false
 		for _, condition := range winConditions {
