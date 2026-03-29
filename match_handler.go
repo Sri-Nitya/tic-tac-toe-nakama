@@ -168,7 +168,7 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 
 		if win {
 			result := map[string]string{
-				"winner": s.players[userId].GetUsername()
+				"winner": s.players[userId].GetUsername(),
 			}
 			resultBytes, _ := json.Marshal(result)
 			dispatcher.BroadcastMessage(2, resultBytes, nil, nil, true)
@@ -177,8 +177,14 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 			return nil
 		}
 
-		boardState, _ := json.Marshal(s.board)
-		dispatcher.BroadcastMessage(1, boardState, nil, nil, true)
+		response := map[string]interface{}{
+			"board": s.board,
+			"turn": s.marks[s.currentTurn], // send X or O instead of userId
+			"players": s.marks,
+		}
+
+		responseBytes, _ := json.Marshal(response)
+		dispatcher.BroadcastMessage(1, responseBytes, nil, nil, true)
 	}
 	return state
 }
