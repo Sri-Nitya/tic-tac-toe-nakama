@@ -106,7 +106,7 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 		for _, p := range presences {
 			delete(s.players, p.GetUserId())
 		}
-		return s
+		return nil
 	}
 
 	for _, p := range presences {
@@ -204,7 +204,7 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 			})
 
 			logger.Info("Player %s wins!", s.winner)
-			return s
+			return nil
 		}
 
 		isBoardFull := true
@@ -227,7 +227,7 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 			})
 
 			logger.Info("Board is full, it's a draw")
-			return s
+			return nil
 		}
 
 		for player := range s.players {
