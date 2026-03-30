@@ -120,7 +120,7 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 		if len(s.players) == 1 {
 			for remainingUserID, remainingPresence := range s.players {
 				s.gameOver = true
-				s.winner = remainingPresence.GetUsername()
+				s.winner = remainingPresence.GetUserId()
 
 				broadcastResult(dispatcher, map[string]interface{}{
 					"type":   "disconnect",
@@ -195,7 +195,7 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 
 		if win {
 			s.gameOver = true
-			s.winner = s.players[userId].GetUsername()
+			s.winner = userId
 
 			broadcastState(dispatcher, s)
 			broadcastResult(dispatcher, map[string]interface{}{
