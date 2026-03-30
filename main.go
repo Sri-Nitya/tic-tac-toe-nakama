@@ -40,20 +40,19 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	}
 
 	err = initializer.RegisterRpc("quick_match", func(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
-		minSize := 0
-		maxSize := 2
+		minSize := 1
+		maxSize := 1
 		matches, err := nk.MatchList(ctx, 10, true, matchLabel, &minSize, &maxSize, "")
 		if err != nil {
 			logger.Error("ERROR LISTING MATCHES: %v", err)
 			return "", err
 		}
 
-		for _, match := range matches {
-			if match.Size < 2 {
-				response := map[string]string{"matchId": match.MatchId}
-				responseBytes, _ := json.Marshal(response)
-				return string(responseBytes), nil
-			}
+		if len(matches) > 0 {
+			matchId := matches[0].MatchId
+			response := map[string]string{"matchId": matchId}
+			responseBytes, _ := json.Marshal(response)
+			return string(responseBytes), nil
 		}
 		matchId, err := nk.MatchCreate(ctx, matchLabel, nil)
 		if err != nil {
