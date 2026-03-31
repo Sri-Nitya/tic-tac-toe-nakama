@@ -111,13 +111,12 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 
 	for _, p := range presences {
 		leftUserID := p.GetUserId()
-		leftUsername := p.GetUsername()
 
 		delete(s.players, leftUserID)
 
 
 		if len(s.players) == 1 {
-			for remainingUserID, remainingPresence := range s.players {
+			for _, remainingPresence := range s.players {
 				s.gameOver = true
 				s.winner = remainingPresence.GetUserId()
 
