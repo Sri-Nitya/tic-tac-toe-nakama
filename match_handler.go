@@ -69,12 +69,12 @@ func (m *MatchHandler) MatchInit(ctx context.Context, logger runtime.Logger, db 
 
 func (m *MatchHandler) MatchJoinAttempt(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, presence runtime.Presence, metadata map[string]string) (interface{}, bool, string) {
 
-	if len(state.(*MatchState).players) >= 2 {
-		logger.Info("JOIN ATTEMPT REJECTED: MATCH FULL")
-		return state, false, "Match is full"
+	s := state.(*MatchState)
+	if len(s.players) >= 2 || s.gameOver {
+		return s, false, "Match is full"
 	}
 
-	return state, true, ""
+	return s, true, ""
 }
 
 func (m *MatchHandler) MatchJoin(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, presences []runtime.Presence) interface{} {
@@ -82,14 +82,15 @@ func (m *MatchHandler) MatchJoin(ctx context.Context, logger runtime.Logger, db 
 	s := state.(*MatchState)
 
 	for _, p := range presences {
-		s.players[p.GetUserId()] = p
+		userID := p.GetUserId()
+		s.players[userID] = p
 
 		if len(s.players) == 1 {
-			s.marks[p.GetUserId()] = "X"
-			s.currentTurn = p.GetUserId()
+			s.marks[userID] = "X"
+			s.currentTurn = userID
 			logger.Info("First player joined: %s as X", p.GetUsername())
 		} else if len(s.players) == 2 {
-			s.marks[p.GetUserId()] = "O"
+			s.marks[userID] = "O"
 			logger.Info("Second player joined: %s as O", p.GetUsername())
 		}
 	}
@@ -135,9 +136,13 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 				})
 
 				logger.Info("Opponent disconnected. Winner: %s (%s)", s.winner, remainingUserID)
-				break
+				return nil
 			}
 		}
+	}
+
+	if len(s.players) == 0 {
+		return nil
 	}
 
 	return s
