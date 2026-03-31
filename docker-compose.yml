@@ -11,7 +11,9 @@ services:
           sleep 2;
         done;
         exec /nakama/nakama --name nakama1 --database.address root@cockroachdb:26257 --logger.level INFO \
-        --runtime.path /nakama/data/modules
+        --runtime.path /nakama/data/modules \
+        -- session.token_expiry_sec 86400 \
+        --session.refresh_token_expiry_sec 604800
       
     ports:
       - "7349:7349"
