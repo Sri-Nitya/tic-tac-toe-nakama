@@ -2,6 +2,15 @@
 
 Live Game: https://tic-tac-toe-frontend-gfvvs7v4a-sri-nityas-projects.vercel.app/
 
+## ⚠️ Note on Initial Load
+
+The backend is hosted on Render free tier, which may cause a short delay (cold start) when the service is inactive.
+
+- On first load, the connection may fail initially
+- Please wait a few seconds and refresh the page once or twice
+
+After the backend wakes up, the application works normally without issues.
+
 Deployed Nakama server: https://tic-tac-toe-nakama-itj6.onrender.com
 
 This repository contains the Nakama backend for a real-time multiplayer Tic Tac Toe Game. 
