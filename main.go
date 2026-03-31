@@ -9,21 +9,20 @@ import (
 )
 
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
-	logger.Info("NITYA TEST: MODULE LOADED")
 
 	err := initializer.RegisterMatch(matchLabel, func(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule) (runtime.Match, error) {
 		return &MatchHandler{}, nil
 	})
 
 	if err != nil {
-		logger.Error("NITYA TEST: ERROR REGISTERING MATCH: %v", err)
+		logger.Error("ERROR REGISTERING MATCH: %v", err)
 		return err
 	}
 
 	err = initializer.RegisterRpc("create_match", func(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
 		matchId, err := nk.MatchCreate(ctx, matchLabel, nil)
 		if err != nil {
-			logger.Error("NITYA TEST: ERROR CREATING MATCH: %v", err)
+			logger.Error("ERROR CREATING MATCH: %v", err)
 			return "", err
 		}
 
@@ -35,7 +34,7 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	})
 
 	if err != nil {
-		logger.Error("NITYA TEST: ERROR REGISTERING RPC: %v", err)
+		logger.Error("ERROR REGISTERING RPC: %v", err)
 		return err
 	}
 

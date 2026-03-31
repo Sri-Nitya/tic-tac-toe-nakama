@@ -57,7 +57,6 @@ func broadcastResult(dispatcher runtime.MatchDispatcher, payload map[string]inte
 
 func (m *MatchHandler) MatchInit(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, params map[string]interface{}) (interface{}, int, string) {
 
-	logger.Info("MATCH INIT")
 
 	state := &MatchState{
 		players: make(map[string]runtime.Presence),
@@ -88,10 +87,8 @@ func (m *MatchHandler) MatchJoin(ctx context.Context, logger runtime.Logger, db 
 		if len(s.players) == 1 {
 			s.marks[userID] = "X"
 			s.currentTurn = userID
-			logger.Info("First player joined: %s as X", p.GetUsername())
 		} else if len(s.players) == 2 {
 			s.marks[userID] = "O"
-			logger.Info("Second player joined: %s as O", p.GetUsername())
 		}
 	}
 
@@ -118,7 +115,6 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 
 		delete(s.players, leftUserID)
 
-		logger.Info("Player left: %s", leftUsername)
 
 		if len(s.players) == 1 {
 			for remainingUserID, remainingPresence := range s.players {
@@ -135,7 +131,6 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 					"message": "Opponent disconnected",
 				})
 
-				logger.Info("Opponent disconnected. Winner: %s (%s)", s.winner, remainingUserID)
 				return nil
 			}
 		}
@@ -154,7 +149,6 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 
 	for _, msg := range messages {
 		if len(s.players) < 2 || s.gameOver {
-			logger.Info("Ignoring move")
 			continue
 		}
 
@@ -166,33 +160,27 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 		}
 		
 		userId := msg.GetUserId()
-		logger.Info("Received move from player %s: row %d, col %d", userId, move.Row, move.Col)
 
 		if move.Row < 0 || move.Row > 2 || move.Col < 0 || move.Col > 2 {
-			logger.Info("Invalid move: row and col must be between 0 and 2")
 			continue
 		}
 
 		// Check if it's the player's turn
 		if s.currentTurn != "" && s.currentTurn != userId {
-			logger.Info("It's not player %s's turn", userId)
 			continue
 		}
 
 		// Check if cell is empty
 		if s.board[move.Row][move.Col] != "" {
-			logger.Info("Cell (%d, %d) is already occupied", move.Row, move.Col)
 			continue
 		}
 
 		mark := s.marks[userId]
 		if mark == "" {
-			logger.Info("Player %s has no assigned mark", userId)
 			continue
 		}
 
 		s.board[move.Row][move.Col] = mark
-		logger.Info("Player %s placed %s at (%d, %d)",userId, mark, move.Row, move.Col)
 
 		win := false
 		for _, condition := range winConditions {
@@ -219,7 +207,6 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 				"winner": s.winner,
 			})
 
-			logger.Info("Player %s wins!", s.winner)
 			return nil
 		}
 
@@ -247,7 +234,6 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 				"message": "It's a draw",
 			})
 
-			logger.Info("Board is full, it's a draw")
 			return nil
 		}
 
@@ -266,14 +252,10 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 
 func (m *MatchHandler) MatchTerminate(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, graceSeconds int) interface{} {
 
-	logger.Info("MATCH TERMINATE")
-
 	return state
 }
 
 func (m *MatchHandler) MatchSignal(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, data string) (interface{}, string) {
-
-	logger.Info("MATCH SIGNAL: %s", data)
 
 	return state, ""
 }
