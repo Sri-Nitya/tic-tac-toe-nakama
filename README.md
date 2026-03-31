@@ -1,6 +1,6 @@
 # Tic Tac Toe Backend (Nakama + Go)
 
-Live Game: https://tic-tac-toe-frontend-gfvvs7v4a-sri-nityas-projects.vercel.app/
+Live Game: https://tic-tac-toe-frontend-lovat.vercel.app/
 
 ## ⚠️ Note on Initial Load
 
