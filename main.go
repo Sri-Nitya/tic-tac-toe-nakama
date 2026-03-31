@@ -63,5 +63,11 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		responseBytes, _ := json.Marshal(response)
 		return string(responseBytes), nil
 	})
+
+	err = initializer.RegisterRpc("get_leaderboard", getLeaderboardRpc)
+	if err != nil {
+		logger.Error("ERROR REGISTERING LEADERBOARD RPC: %v", err)
+		return err
+	}
 	return nil
 }

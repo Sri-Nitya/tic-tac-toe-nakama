@@ -109,6 +109,8 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 		return nil
 	}
 
+	originalPlayerIDs := getPlayerIDsFromState(s)
+
 	for _, p := range presences {
 		leftUserID := p.GetUserId()
 		leftUsername := p.GetUsername()
@@ -121,6 +123,10 @@ func (m *MatchHandler) MatchLeave(ctx context.Context, logger runtime.Logger, db
 			for remainingUserID, remainingPresence := range s.players {
 				s.gameOver = true
 				s.winner = remainingPresence.GetUserId()
+
+				if err := updatePlayerStatsForResult(ctx, nk, s.winner, originalPlayerIDs, false); err != nil {
+					logger.Error("Error updating player stats: %v", err)
+				}
 
 				broadcastResult(dispatcher, map[string]interface{}{
 					"type":   "disconnect",
@@ -197,6 +203,11 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 			s.gameOver = true
 			s.winner = userId
 
+			playerIDs := getPlayerIDsFromState(s)
+			if err := updatePlayerStatsForResult(ctx, nk, s.winner, playerIDs, false); err != nil {
+				logger.Error("Failed to update win stats: %v", err)
+			}
+
 			broadcastState(dispatcher, s)
 			broadcastResult(dispatcher, map[string]interface{}{
 				"type":   "win",
@@ -219,6 +230,11 @@ func (m *MatchHandler) MatchLoop(ctx context.Context, logger runtime.Logger, db 
 
 		if isBoardFull {
 			s.gameOver = true
+
+			playerIDs := getPlayerIDsFromState(s)
+			if err := updatePlayerStatsForResult(ctx, nk, "", playerIDs, true); err != nil {
+				logger.Error("Failed to update draw stats: %v", err)
+			}
 
 			broadcastState(dispatcher, s)
 			broadcastResult(dispatcher, map[string]interface{}{
